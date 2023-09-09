@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[project]
+description = "Package to generate markdown files."
+dynamic = ["version"]
+name = "dynamic-markdown"
+
+authors = [{name = "Mahdi Lamb", email = "mahdilamb@gmail.com"}]
+dependencies = [
+
+]
+
+[project.optional-dependencies]
+test = [
+  "black",
+  "isort",
+  "mypy",
+  "bandit",
+  "pytest",
+  "pytest-cov",
+  "docformatter",
+  "pydocstyle",
+]
+[tool.setuptools.dynamic]
+version = {attr = "dynamic_markdown.__version__"}
+
+[tool.setuptools]
+packages = ["dynamic_markdown"]
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.docformatter]
+black = true
+recursive = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+python_files = [
+  "test_*.py",
+]
+python_functions = ["*_test"]
+testpaths = [
+  "tests",
+]

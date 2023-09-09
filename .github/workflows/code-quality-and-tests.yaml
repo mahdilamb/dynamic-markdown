@@ -1,0 +1,56 @@
+
+name: Check code quality and run unit tests
+
+on: [push]
+
+jobs:
+  prepare:
+    if: ${{ github.ref }} != 'refs/heads/${{ github.event.repository.default_branch }}'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: mahdilamb/check-python-package@main
+      with: 
+        use_version_check: true
+        version_check_path: dynamic_markdown/__init__.py
+        use_black: true
+        black_args: '"dynamic_markdown" "tests"'
+        use_isort: true
+        isort_args: '"dynamic_markdown" "tests"'
+
+  build:
+    needs: prepare
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: browser-actions/setup-chrome@v1
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+      - name: Print dependencies
+        run: pip freeze
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[test]
+      - name: Unit tests [pytest]
+        if: ${{ always() }}
+        run: pytest --cov=dynamic_markdown --cov-report term-missing
+      - name: Check docstrings [pydocstyle]
+        if: ${{ always() }}
+        run: pydocstyle dynamic_markdown
+      - name: Check code quality [black]
+        if: ${{ always() }}
+        run: black --check dynamic_markdown
+      - name: Check security [bandit]
+        if: ${{ always() }}
+        run: bandit -r dynamic_markdown
