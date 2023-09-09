@@ -35,6 +35,16 @@ def use_global_test():
     )
 
 
+def inline_assignment_test():
+    """Test that inline assignment works from a primitive."""
+    assert (
+        utils.inject(
+            """<!-- df = 123 --><!-- $::end --><!-- $::get("df") --><!-- $::end -->"""
+        )
+        == """<!-- df = 123 --><!-- $::end --><!-- $::get("df") -->123<!-- $::end -->"""
+    )
+
+
 if __name__ == "__main__":
     import sys
 
