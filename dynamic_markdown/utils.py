@@ -1,10 +1,8 @@
 """Generate a readme with content derived from python."""
 import ast
-import builtins
 import importlib
 import logging
 import re
-from types import MappingProxyType
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 logger = logging.getLogger()
