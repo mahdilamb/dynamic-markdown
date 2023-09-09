@@ -27,7 +27,7 @@ Getting and setting:
 <!-- $::get('x') --><!-- $::end -->
 ```
 
-Or (to use a set value in a function call): 
+Or (to use a set value in a function call):
 
 ```markdown
 # Test
