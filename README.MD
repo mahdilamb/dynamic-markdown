@@ -1,5 +1,7 @@
 # Dynamic markdown
 
+[![Check code quality and run unit tests](https://github.com/mahdilamb/dynamic-markdown/actions/workflows/code-quality-and-tests.yaml/badge.svg)](https://github.com/mahdilamb/dynamic-markdown/actions/workflows/code-quality-and-tests.yaml)
+
 Python package for integrating python function results into a markdown document.
 
 # Usage
