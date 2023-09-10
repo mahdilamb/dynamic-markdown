@@ -13,12 +13,12 @@ fake_module = type(
 def injection_works_test():
     """Test that we can inject content."""
     assert (
-        utils.inject("<!--- fake::get() --><!--- $::end --->")
-        == "<!--- fake::get() -->1<!--- $::end --->"
+        utils.inject("<!---{$ fake::get() $}--><!--{><}-->")
+        == "<!---{$ fake::get() $}-->1<!--{><}-->"
     )
     assert (
-        utils.inject("<!--- fake::repeat(a=23) --><!--- $::end --->")
-        == "<!--- fake::repeat(a=23) -->(), {'a': 23}<!--- $::end --->"
+        utils.inject("<!---{$ fake::repeat(a=23) $}--><!--{><}-->")
+        == "<!---{$ fake::repeat(a=23) $}-->(), {'a': 23}<!--{><}-->"
     )
 
 
@@ -26,8 +26,8 @@ def injection_works_test():
 def format_spec_test():
     """Test that format_spec works."""
     assert (
-        utils.inject("<!--- fake::get():.2f --><!--- $::end --->")
-        == "<!--- fake::get():.2f -->1.00<!--- $::end --->"
+        utils.inject("<!---{$ fake::get() :.2f$}--><!--{><}-->")
+        == "<!---{$ fake::get() :.2f$}-->1.00<!--{><}-->"
     )
 
 
@@ -35,8 +35,8 @@ def format_spec_test():
 def inline_test():
     """Test that we can inject content inline."""
     assert (
-        utils.inject("One is <!--- fake::get() --><!--- $::end --->")
-        == "One is <!--- fake::get() -->1<!--- $::end --->"
+        utils.inject("One is <!---{$ fake::get() $}--><!--{><}-->")
+        == "One is <!---{$ fake::get() $}-->1<!--{><}-->"
     )
 
 
@@ -46,10 +46,10 @@ def newline_test():
     assert (
         utils.inject(
             """One is:
-<!--- fake::get() --><!--- $::end --->"""
+<!---{$ fake::get() $}--><!--{><}-->"""
         )
         == """One is:
-<!--- fake::get() -->1<!--- $::end --->"""
+<!---{$ fake::get() $}-->1<!--{><}-->"""
     )
 
 
@@ -57,8 +57,8 @@ def newline_test():
 def replacement_test():
     """Check that we can replace content."""
     assert (
-        utils.inject("One is <!--- fake::get() -->2<!--- $::end --->.")
-        == "One is <!--- fake::get() -->1<!--- $::end --->."
+        utils.inject("One is <!---{$ fake::get() $}-->2<!--{><}-->.")
+        == "One is <!---{$ fake::get() $}-->1<!--{><}-->."
     )
 
 
@@ -67,9 +67,9 @@ def multiple_replacement_test():
     """Test that multiple replacements work."""
     assert (
         utils.inject(
-            "One is <!--- fake::get() --><!--- $::end --->. Une is <!--- fake::get() --><!--- $::end --->. Uno is <!--- fake::get() --><!--- $::end --->."
+            "One is <!---{$ fake::get() $}--><!--{><}-->. Une is <!---{$ fake::get() $}--><!--{><}-->. Uno is <!---{$ fake::get() $}--><!--{><}-->."
         )
-        == "One is <!--- fake::get() -->1<!--- $::end --->. Une is <!--- fake::get() -->1<!--- $::end --->. Uno is <!--- fake::get() -->1<!--- $::end --->."
+        == "One is <!---{$ fake::get() $}-->1<!--{><}-->. Une is <!---{$ fake::get() $}-->1<!--{><}-->. Uno is <!---{$ fake::get() $}-->1<!--{><}-->."
     )
 
 

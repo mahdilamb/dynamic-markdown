@@ -6,19 +6,20 @@ import re
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 logger = logging.getLogger()
-MODULE = re.compile(r"((?:[A-z_][A-z0-9_.]*)|\$)::(.*?)\s*(?:\((.*?)\))", re.M)
+
 BLOCK = re.compile(
-    r"<!-{2,3}\s*(?:(?:"
-    + MODULE.pattern
-    + r"(?::(\S*))?)|(?:([A-z_][A-z0-9_]*)\s*=\s*([\s\S]*?)))\s*-{2,3}>([\S\s]*?)<!-{2,3}\s*\$::end\s*-{2,3}>",
+    r"<!-{2,3}\{(?:([\{%\$])\s+([\s\S]*?)(?:\s+|(?::\s*)(\S*))([\}%\$])|(>)([\s\S]*?)(<))\}-{2,3}>",
     re.M,
 )
-GLOBAL_VARIABLE = re.compile(r"(\$[A-z_][A-z0-9_.]*\s*,?)")
+SET = re.compile(r"^set ([A-z_][A-z0-9_]*)\s*=\s*(.*)$")
+CALL = re.compile(r"((?:[A-z_][A-z0-9_.]*)|\$)::(.*?)\s*(?:\((.*?)\))", re.M)
+
+VARIABLE = re.compile(r"(?:,|^)(\s*[A-z_][A-z0-9_.]*\s*(?:,|$))")
 KWARG_NAMES = re.compile(r"(?:[\s,]|^)(([A-z_][A-z\d_]*)\s*=)", re.M)
 
 
 def convert_parameters(
-    parameter_list: str, env
+    parameter_list: str, state
 ) -> Tuple[Iterable[Any], Mapping[str, Any]]:
     """Convert a parameter list to args and kwargs.
 
@@ -38,11 +39,11 @@ def convert_parameters(
     for kwarg in kwarg_name_matches[::-1]:
         value_list = value_list[: kwarg.start(1)] + value_list[kwarg.end(0) :]
     values = []
-    for i, val_match in enumerate(GLOBAL_VARIABLE.split(value_list)):
+    for i, val_match in enumerate(VARIABLE.split(value_list)):
         if i % 2 == 1:
-            values.append(env.get(val_match.strip()[1]))
+            values.append(state.get(val_match.rstrip(",").strip()))
         elif val_match:
-            values.extend(ast.literal_eval(f"({val_match.strip(',') },)"))
+            values.extend(ast.literal_eval(f"({val_match.rstrip(',').strip() },)"))
     if kwarg_names:
         return tuple(values[: -len(kwarg_names) :]), {
             k: v for k, v in zip(kwarg_names, values[-len(kwarg_names) :])
@@ -50,14 +51,43 @@ def convert_parameters(
     return tuple(values), {}
 
 
-def _environment(values: Optional[Dict[str, Any]] = None):
-    """Create an environment."""
+def _state(values: Optional[Dict[str, Any]] = None):
+    """Create a state."""
     if values is None:
         values = {}
 
     return type(
-        "environment", (), {"set": values.__setitem__, "get": values.__getitem__}
+        "state",
+        (),
+        {"set": values.__setitem__, "get": values.__getitem__, "__last": None},
     )
+
+
+def process_control(
+    content: str,
+    state,
+):
+    """Process a control block."""
+    if content.startswith("set "):
+        key, value = next(SET.finditer(content)).groups()
+        value = ast.literal_eval(value)
+        state.set(key, value)
+    else:
+        raise RuntimeError(
+            f"Unsupported control '{content.split(' ', maxsplit=1)[0]}'."
+        )
+
+
+def process_function(
+    content: str,
+    state,
+):
+    """Process a function block."""
+    module_path, fn, parameters = next(CALL.finditer(content)).groups()
+    module = importlib.import_module(module_path)
+    args, kwargs = convert_parameters(parameters, state)
+    result = getattr(module, fn)(*args, **kwargs)
+    return result
 
 
 def inject(contents: str) -> str:
@@ -73,8 +103,42 @@ def inject(contents: str) -> str:
     str
         The new contents of the markdown file.
     """
-    env = _environment({})
+    state = _state({})
     replacements: List[Tuple[int, int, str]] = []
+    to_flush = None
+    append_flush = False
+    last_block = None
+    for block in BLOCK.finditer(contents):
+        lflag, content, format_spec, rflag, flflag, fcontent, frflag = block.groups()
+        if flflag:
+            replacements.append((last_block.end(0), block.start(0), str(to_flush)))
+            to_flush = None
+            append_flush = False
+        else:
+            if append_flush:
+                replacements.append(
+                    (last_block.end(0), block.start(0), str(to_flush) + "<!--{><}-->")
+                )
+                append_flush = False
+            if lflag == "{":
+                to_flush = state.get(content)
+                append_flush = True
+            elif lflag == "%":
+                to_flush = process_control(content, state)
+            elif lflag == "$":
+                to_flush = process_function(content, state)
+        if format_spec:
+            to_flush = format(to_flush, format_spec)
+        last_block = block
+
+    if append_flush:
+        replacements.append(
+            (last_block.end(0), last_block.end(0), str(to_flush) + "<!--{><}-->")
+        )
+    for start, end, replacement in replacements[::-1]:
+        contents = contents[:start] + replacement + contents[end:]
+
+    return contents
 
     for to_replace in BLOCK.finditer(contents):
         (
@@ -89,24 +153,22 @@ def inject(contents: str) -> str:
 
         if assignee:
             try:
-                env.set(assignment, ast.literal_eval(assignee))
+                state.set(assignment, ast.literal_eval(assignee))
             except SyntaxError as e:
                 try:
-                    module_path, fn, parameters = next(
-                        MODULE.finditer(assignee)
-                    ).groups()
+                    module_path, fn, parameters = next(CALL.finditer(assignee)).groups()
                     assignee = None
                 except StopIteration as ee:
                     raise ee from e
         if not assignee:
             if module_path == "$":
-                module = env
+                module = state
             elif module_path:
                 module = importlib.import_module(module_path)
-            args, kwargs = convert_parameters(parameters, env)
+            args, kwargs = convert_parameters(parameters, state)
             result = getattr(module, fn)(*args, **kwargs)
             if assignment:
-                env.set(assignment, result)
+                state.set(assignment, result)
                 result = None
             if result is None:
                 continue
@@ -115,7 +177,3 @@ def inject(contents: str) -> str:
             else:
                 result = str(result)
             replacements.append((to_replace.start(7), to_replace.end(7), result))
-    for start, end, replacement in replacements[::-1]:
-        contents = contents[:start] + replacement + contents[end:]
-
-    return contents

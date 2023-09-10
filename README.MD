@@ -11,9 +11,8 @@ Function calling:
 ```markdown
 # Function calling
 
-<!--- path.to.module::function(1, 2, k='v') -->
-
-<!--- $::end -->
+<!--{$ path.to.module::function(1, 2, k='v') $}-->
+<!--{><}-->
 
 
 ```
@@ -23,15 +22,15 @@ Getting and setting:
 ```markdown
 # Test
 
-<!--- $::set('x', 1243) --><!-- $::end -->
-<!-- $::get('x') --><!-- $::end -->
+<!---{% set x = 12345 %}-->
+<!--{{x}}--><!--{><}-->
 ```
 
-Or (to use a set value in a function call):
+## Syntax
 
-```markdown
-# Test
+Processed blocks must be one of the following:
 
-<!--- $::set("x", 5) --><!-- $::end -->
-<!--- module::sum($x, 5) --><!-- $::end -->
-```
+* Function calls `<!--{$ ... $}-->`
+* Control calls `<!--{% ... %}-->`
+* Output calls `<!--{{ ... }}-->`
+* Flush `<!--{> ... <}-->`
