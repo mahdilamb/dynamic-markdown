@@ -8,10 +8,8 @@ fake_adder = type("fake_module", (), {"add_and_shout": lambda x, y: x + y})
 def set_and_get_test():
     """Test that we can get and set values."""
     assert (
-        utils.inject(
-            """<!--- $::set('x', 1243) --><!-- $::end --><!-- $::get('x') --><!-- $::end -->"""
-        )
-        == "<!--- $::set('x', 1243) --><!-- $::end --><!-- $::get('x') -->1243<!-- $::end -->"
+        utils.inject("""<!---{% set x = 1243 %}--><!--{{ x }}--><!--{><}-->""")
+        == "<!---{% set x = 1243 %}--><!--{{ x }}-->1243<!--{><}-->"
     )
 
 
@@ -23,14 +21,14 @@ def use_global_test():
         (
             utils.inject(
                 """
-<!--- $::set("x", 5) --><!-- $::end -->
-<!--- fake::add_and_shout($x, 5) --><!-- $::end -->
+<!---{% set x = 5 %}-->
+<!---{$ fake::add_and_shout(x, 5) $}--><!--{><}-->
 """
             )
         )
         == """
-<!--- $::set("x", 5) --><!-- $::end -->
-<!--- fake::add_and_shout($x, 5) -->10<!-- $::end -->
+<!---{% set x = 5 %}-->
+<!---{$ fake::add_and_shout(x, 5) $}-->10<!--{><}-->
 """
     )
 
@@ -38,10 +36,8 @@ def use_global_test():
 def inline_assignment_test():
     """Test that inline assignment works from a primitive."""
     assert (
-        utils.inject(
-            """<!-- df = 123 --><!-- $::end --><!-- $::get("df") --><!-- $::end -->"""
-        )
-        == """<!-- df = 123 --><!-- $::end --><!-- $::get("df") -->123<!-- $::end -->"""
+        utils.inject("""<!--{% set df = 123 %}--><!--{{ df }}--><!--{><}-->""")
+        == """<!--{% set df = 123 %}--><!--{{ df }}-->123<!--{><}-->"""
     )
 
 
