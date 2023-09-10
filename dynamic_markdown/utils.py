@@ -8,11 +8,14 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 logger = logging.getLogger()
 
 BLOCK = re.compile(
-    r"<!-{2,3}\{(?:([\{%\$])\s+([\s\S]*?)(?:\s+|(?::\s*)(\S*))([\}%\$])|(>)([\s\S]*?)(<))\}-{2,3}>",
+    r"<!-{2,3}\{([\{%\$>])\s*([\s\S]*?)(?:\s*|(?::\s*)(\S*?))([\}%\$<])\}-{2,3}>",
     re.M,
 )
-SET = re.compile(r"^set ([A-z_][A-z0-9_]*)\s*=\s*(.*)$")
-CALL = re.compile(r"((?:[A-z_][A-z0-9_.]*)|\$)::(.*?)\s*(?:\((.*?)\))", re.M)
+SET = re.compile(r"^set\s+([A-z_][A-z0-9_]*)\s*=\s*(.*)$")
+CALL = re.compile(
+    r"(?:set\s+([A-z_][A-z0-9_]*)\s*=\s*)?((?:[A-z_][A-z0-9_.]*)|\$)::(.*?)\s*(?:\((.*?)\))",
+    re.M,
+)
 
 VARIABLE = re.compile(r"(?:,|^)(\s*[A-z_][A-z0-9_.]*\s*(?:,|$))")
 KWARG_NAMES = re.compile(r"(?:[\s,]|^)(([A-z_][A-z\d_]*)\s*=)", re.M)
@@ -83,10 +86,12 @@ def process_function(
     state,
 ):
     """Process a function block."""
-    module_path, fn, parameters = next(CALL.finditer(content)).groups()
+    assign, module_path, fn, parameters = next(CALL.finditer(content)).groups()
     module = importlib.import_module(module_path)
     args, kwargs = convert_parameters(parameters, state)
     result = getattr(module, fn)(*args, **kwargs)
+    if assign:
+        state.set(assign, result)
     return result
 
 
@@ -109,8 +114,8 @@ def inject(contents: str) -> str:
     append_flush = False
     last_block = None
     for block in BLOCK.finditer(contents):
-        lflag, content, format_spec, rflag, flflag, fcontent, frflag = block.groups()
-        if flflag:
+        lflag, content, format_spec, rflag = block.groups()
+        if lflag == ">":
             replacements.append((last_block.end(0), block.start(0), str(to_flush)))
             to_flush = None
             append_flush = False
@@ -139,41 +144,3 @@ def inject(contents: str) -> str:
         contents = contents[:start] + replacement + contents[end:]
 
     return contents
-
-    for to_replace in BLOCK.finditer(contents):
-        (
-            module_path,
-            fn,
-            parameters,
-            format_spec,
-            assignment,
-            assignee,
-            _,
-        ) = to_replace.groups()
-
-        if assignee:
-            try:
-                state.set(assignment, ast.literal_eval(assignee))
-            except SyntaxError as e:
-                try:
-                    module_path, fn, parameters = next(CALL.finditer(assignee)).groups()
-                    assignee = None
-                except StopIteration as ee:
-                    raise ee from e
-        if not assignee:
-            if module_path == "$":
-                module = state
-            elif module_path:
-                module = importlib.import_module(module_path)
-            args, kwargs = convert_parameters(parameters, state)
-            result = getattr(module, fn)(*args, **kwargs)
-            if assignment:
-                state.set(assignment, result)
-                result = None
-            if result is None:
-                continue
-            if format_spec:
-                result = format(result, format_spec)
-            else:
-                result = str(result)
-            replacements.append((to_replace.start(7), to_replace.end(7), result))

@@ -2,7 +2,7 @@ from unittest import mock
 
 from dynamic_markdown import utils
 
-fake_adder = type("fake_module", (), {"add_and_shout": lambda x, y: x + y})
+fake_adder = type("fake_module", (), {"add": lambda x, y: x + y})
 
 
 def set_and_get_test():
@@ -15,20 +15,36 @@ def set_and_get_test():
 
 @mock.patch("sys.modules", new={"fake": fake_adder})
 def use_global_test():
-    import fake
-
     assert (
         (
             utils.inject(
                 """
 <!---{% set x = 5 %}-->
-<!---{$ fake::add_and_shout(x, 5) $}--><!--{><}-->
+<!---{$ fake::add(x, 5) $}--><!--{><}-->
 """
             )
         )
         == """
 <!---{% set x = 5 %}-->
-<!---{$ fake::add_and_shout(x, 5) $}-->10<!--{><}-->
+<!---{$ fake::add(x, 5) $}-->10<!--{><}-->
+"""
+    )
+
+
+@mock.patch("sys.modules", new={"fake": fake_adder})
+def store_result_test():
+    assert (
+        (
+            utils.inject(
+                """
+<!---{% set x = 5 %}-->
+<!---{$ set y= fake::add(x, 5) $}--><!--{{y}}--><!--{><}-->
+"""
+            )
+        )
+        == """
+<!---{% set x = 5 %}-->
+<!---{$ set y= fake::add(x, 5) $}--><!--{{y}}-->10<!--{><}-->
 """
     )
 
