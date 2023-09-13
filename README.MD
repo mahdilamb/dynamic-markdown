@@ -4,16 +4,15 @@
 
 Python package for integrating python function results into a markdown document.
 
-# Usage
+## Usage
 
 Function calling:
 
 ```markdown
 # Function calling
 
-<!--{$ path.to.module::function(1, 2, k='v') $}-->
+<!--{$ path.to.module:function(1, 2, k='v') $}-->
 <!--{><}-->
-
 
 ```
 
@@ -22,15 +21,16 @@ Getting and setting:
 ```markdown
 # Test
 
-<!---{% set x = 12345 %}-->
+<!--{% x = 12345 %}-->
 <!--{{x}}--><!--{><}-->
+
 ```
 
 ## Syntax
 
 Processed blocks must be one of the following:
 
-* Function calls `<!--{$ ... $}-->`
 * Control calls `<!--{% ... %}-->`
 * Output calls `<!--{{ ... }}-->`
 * Flush `<!--{> ... <}-->`
+* Function calls `<!--{$ ... $}-->`

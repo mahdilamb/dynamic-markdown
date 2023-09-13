@@ -1,6 +1,6 @@
 from unittest import mock
 
-from dynamic_markdown import utils
+from dynamic_markdown import processor
 
 fake_module = type(
     "fake_module",
@@ -13,12 +13,12 @@ fake_module = type(
 def injection_works_test():
     """Test that we can inject content."""
     assert (
-        utils.inject("<!---{$ fake::get() $}--><!--{><}-->")
-        == "<!---{$ fake::get() $}-->1<!--{><}-->"
+        processor.process("<!---{$ fake:get() $}--><!--{><}-->")
+        == "<!---{$ fake:get() $}-->1<!--{><}-->"
     )
     assert (
-        utils.inject("<!---{$ fake::repeat(a=23) $}--><!--{><}-->")
-        == "<!---{$ fake::repeat(a=23) $}-->(), {'a': 23}<!--{><}-->"
+        processor.process("<!---{$ fake:repeat(a=23) $}--><!--{><}-->")
+        == "<!---{$ fake:repeat(a=23) $}-->(), {'a': 23}<!--{><}-->"
     )
 
 
@@ -26,8 +26,8 @@ def injection_works_test():
 def format_spec_test():
     """Test that format_spec works."""
     assert (
-        utils.inject("<!---{$ fake::get() :.2f$}--><!--{><}-->")
-        == "<!---{$ fake::get() :.2f$}-->1.00<!--{><}-->"
+        processor.process("<!---{$ fake:get() :.2f$}--><!--{><}-->")
+        == "<!---{$ fake:get() :.2f$}-->1.00<!--{><}-->"
     )
 
 
@@ -35,8 +35,8 @@ def format_spec_test():
 def inline_test():
     """Test that we can inject content inline."""
     assert (
-        utils.inject("One is <!---{$ fake::get() $}--><!--{><}-->")
-        == "One is <!---{$ fake::get() $}-->1<!--{><}-->"
+        processor.process("One is <!---{$ fake:get() $}--><!--{><}-->")
+        == "One is <!---{$ fake:get() $}-->1<!--{><}-->"
     )
 
 
@@ -44,12 +44,12 @@ def inline_test():
 def newline_test():
     """Test that we can inject content when it happens in a block."""
     assert (
-        utils.inject(
+        processor.process(
             """One is:
-<!---{$ fake::get() $}--><!--{><}-->"""
+<!---{$ fake:get() $}--><!--{><}-->"""
         )
         == """One is:
-<!---{$ fake::get() $}-->1<!--{><}-->"""
+<!---{$ fake:get() $}-->1<!--{><}-->"""
     )
 
 
@@ -57,8 +57,8 @@ def newline_test():
 def replacement_test():
     """Check that we can replace content."""
     assert (
-        utils.inject("One is <!---{$ fake::get() $}-->2<!--{><}-->.")
-        == "One is <!---{$ fake::get() $}-->1<!--{><}-->."
+        processor.process("One is <!---{$ fake:get() $}-->2<!--{><}-->.")
+        == "One is <!---{$ fake:get() $}-->1<!--{><}-->."
     )
 
 
@@ -66,10 +66,10 @@ def replacement_test():
 def multiple_replacement_test():
     """Test that multiple replacements work."""
     assert (
-        utils.inject(
-            "One is <!---{$ fake::get() $}--><!--{><}-->. Une is <!---{$ fake::get() $}--><!--{><}-->. Uno is <!---{$ fake::get() $}--><!--{><}-->."
+        processor.process(
+            "One is <!---{$ fake:get() $}--><!--{><}-->. Une is <!---{$ fake:get() $}--><!--{><}-->. Uno is <!---{$ fake:get() $}--><!--{><}-->."
         )
-        == "One is <!---{$ fake::get() $}-->1<!--{><}-->. Une is <!---{$ fake::get() $}-->1<!--{><}-->. Uno is <!---{$ fake::get() $}-->1<!--{><}-->."
+        == "One is <!---{$ fake:get() $}-->1<!--{><}-->. Une is <!---{$ fake:get() $}-->1<!--{><}-->. Uno is <!---{$ fake:get() $}-->1<!--{><}-->."
     )
 
 
