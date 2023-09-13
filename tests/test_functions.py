@@ -1,6 +1,6 @@
 from unittest import mock
 
-from dynamic_markdown import utils
+from dynamic_markdown import processor
 
 fake_adder = type("fake_module", (), {"add": lambda x, y: x + y})
 
@@ -8,8 +8,8 @@ fake_adder = type("fake_module", (), {"add": lambda x, y: x + y})
 def set_and_get_test():
     """Test that we can get and set values."""
     assert (
-        utils.inject("""<!---{% set x = 1243 %}--><!--{{ x }}--><!--{><}-->""")
-        == "<!---{% set x = 1243 %}--><!--{{ x }}-->1243<!--{><}-->"
+        processor.process("""<!---{% x = 1243 %}--><!--{{ x }}--><!--{><}-->""")
+        == "<!---{% x = 1243 %}--><!--{{ x }}-->1243<!--{><}-->"
     )
 
 
@@ -17,16 +17,16 @@ def set_and_get_test():
 def use_global_test():
     assert (
         (
-            utils.inject(
+            processor.process(
                 """
-<!---{% set x = 5 %}-->
-<!---{$ fake::add(x, 5) $}--><!--{><}-->
+<!---{% x = 5 %}-->
+<!---{$ fake:add(x, 5) $}--><!--{><}-->
 """
             )
         )
         == """
-<!---{% set x = 5 %}-->
-<!---{$ fake::add(x, 5) $}-->10<!--{><}-->
+<!---{% x = 5 %}-->
+<!---{$ fake:add(x, 5) $}-->10<!--{><}-->
 """
     )
 
@@ -35,16 +35,16 @@ def use_global_test():
 def store_result_test():
     assert (
         (
-            utils.inject(
+            processor.process(
                 """
-<!---{% set x = 5 %}-->
-<!---{$ set y= fake::add(x, 5) $}--><!--{{y}}--><!--{><}-->
+<!---{% x = 5 %}-->
+<!---{$ y= fake:add(x, 5) $}--><!--{{y}}--><!--{><}-->
 """
             )
         )
         == """
-<!---{% set x = 5 %}-->
-<!---{$ set y= fake::add(x, 5) $}--><!--{{y}}-->10<!--{><}-->
+<!---{% x = 5 %}-->
+<!---{$ y= fake:add(x, 5) $}--><!--{{y}}-->10<!--{><}-->
 """
     )
 
@@ -52,8 +52,8 @@ def store_result_test():
 def inline_assignment_test():
     """Test that inline assignment works from a primitive."""
     assert (
-        utils.inject("""<!--{% set df = 123 %}--><!--{{ df }}--><!--{><}-->""")
-        == """<!--{% set df = 123 %}--><!--{{ df }}-->123<!--{><}-->"""
+        processor.process("""<!--{% df = 123 %}--><!--{{ df }}--><!--{><}-->""")
+        == """<!--{% df = 123 %}--><!--{{ df }}-->123<!--{><}-->"""
     )
 
 
