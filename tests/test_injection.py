@@ -13,12 +13,12 @@ fake_module = type(
 def injection_works_test():
     """Test that we can inject content."""
     assert (
-        processor.process("<!---{$ fake:get() $}--><!--{><}-->")
-        == "<!---{$ fake:get() $}-->1<!--{><}-->"
+        processor.process("<!---{$ a = fake:get() $}--><!--{{a}}--><!--{><}-->")
+        == "<!---{$ a = fake:get() $}--><!--{{a}}-->1<!--{><}-->"
     )
     assert (
-        processor.process("<!---{$ fake:repeat(a=23) $}--><!--{><}-->")
-        == "<!---{$ fake:repeat(a=23) $}-->(), {'a': 23}<!--{><}-->"
+        processor.process("<!---{$ a = fake:repeat(a=23) $}--><!--{{a}}--><!--{><}-->")
+        == "<!---{$ a = fake:repeat(a=23) $}--><!--{{a}}-->(), {'a': 23}<!--{><}-->"
     )
 
 
@@ -26,8 +26,8 @@ def injection_works_test():
 def format_spec_test():
     """Test that format_spec works."""
     assert (
-        processor.process("<!---{$ fake:get() :.2f$}--><!--{><}-->")
-        == "<!---{$ fake:get() :.2f$}-->1.00<!--{><}-->"
+        processor.process("<!---{$ b = fake:get() $}--><!--{{b:.2f}}--><!--{><}-->")
+        == "<!---{$ b = fake:get() $}--><!--{{b:.2f}}-->1.00<!--{><}-->"
     )
 
 
@@ -35,8 +35,8 @@ def format_spec_test():
 def inline_test():
     """Test that we can inject content inline."""
     assert (
-        processor.process("One is <!---{$ fake:get() $}--><!--{><}-->")
-        == "One is <!---{$ fake:get() $}-->1<!--{><}-->"
+        processor.process("One is <!---{$ c = fake:get() $}--><!--{{c}}--><!--{><}-->")
+        == "One is <!---{$ c = fake:get() $}--><!--{{c}}-->1<!--{><}-->"
     )
 
 
@@ -46,10 +46,10 @@ def newline_test():
     assert (
         processor.process(
             """One is:
-<!---{$ fake:get() $}--><!--{><}-->"""
+<!---{$ c = fake:get() $}--><!--{{c}}--><!--{><}-->"""
         )
         == """One is:
-<!---{$ fake:get() $}-->1<!--{><}-->"""
+<!---{$ c = fake:get() $}--><!--{{c}}-->1<!--{><}-->"""
     )
 
 
@@ -57,8 +57,10 @@ def newline_test():
 def replacement_test():
     """Check that we can replace content."""
     assert (
-        processor.process("One is <!---{$ fake:get() $}-->2<!--{><}-->.")
-        == "One is <!---{$ fake:get() $}-->1<!--{><}-->."
+        processor.process(
+            "One is <!---{$ c = fake:get() $}--><!--{{c}}-->1234<!--{><}-->."
+        )
+        == "One is <!---{$ c = fake:get() $}--><!--{{c}}-->1<!--{><}-->."
     )
 
 
@@ -67,9 +69,9 @@ def multiple_replacement_test():
     """Test that multiple replacements work."""
     assert (
         processor.process(
-            "One is <!---{$ fake:get() $}--><!--{><}-->. Une is <!---{$ fake:get() $}--><!--{><}-->. Uno is <!---{$ fake:get() $}--><!--{><}-->."
+            "One is <!---{$ c = fake:get() $}--><!--{{c}}--><!--{><}-->. Une is <!---{$ c = fake:get() $}--><!--{{c}}--><!--{><}-->. Uno is <!---{$ c = fake:get() $}--><!--{{c}}--><!--{><}-->."
         )
-        == "One is <!---{$ fake:get() $}-->1<!--{><}-->. Une is <!---{$ fake:get() $}-->1<!--{><}-->. Uno is <!---{$ fake:get() $}-->1<!--{><}-->."
+        == "One is <!---{$ c = fake:get() $}--><!--{{c}}-->1<!--{><}-->. Une is <!---{$ c = fake:get() $}--><!--{{c}}-->1<!--{><}-->. Uno is <!---{$ c = fake:get() $}--><!--{{c}}-->1<!--{><}-->."
     )
 
 
