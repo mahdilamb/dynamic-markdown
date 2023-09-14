@@ -19,11 +19,23 @@ def if_test():
 def for_test():
     assert (
         processor.process(
-            """<!--{%for i in range(5)%}--><!--{% if i%2  == 0%}--><!--{{ f'''{i} is even\n''' }}--><!--{% else%}--><!--{{ f'''{i} is odd\n''' }}--><!--{%endif%}--><!--{%endfor%}--><!--{><}-->"""
+            """
+<!--{%for i in range(5)%}-->
+    <!--{% if i%2  == 0%}-->
+        <!--{{ f'{i} is even\n' }}-->
+    <!--{% else%}-->
+        <!--{{ f'{i} is odd\n' }}-->
+    <!--{%endif%}-->
+<!--{%endfor%}--><!--{><}-->"""
         )
-        == """<!--{%for i in range(5)%}--><!--{% if i%2  == 0%}--><!--{{ f'''{i} is even
-''' }}--><!--{% else%}--><!--{{ f'''{i} is odd
-''' }}--><!--{%endif%}--><!--{%endfor%}-->0 is even
+        == """
+<!--{%for i in range(5)%}-->
+    <!--{% if i%2  == 0%}-->
+        <!--{{ f'{i} is even\n' }}-->
+    <!--{% else%}-->
+        <!--{{ f'{i} is odd\n' }}-->
+    <!--{%endif%}-->
+<!--{%endfor%}-->0 is even
 1 is odd
 2 is even
 3 is odd
