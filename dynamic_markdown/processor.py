@@ -9,10 +9,12 @@ logger = logging.getLogger()
 BLOCK_PATTERN = re.compile(
     r"<!-{2,3}\{([\{%\$>])\s*([\s\S]*?)(?:\s*|(?::\s*)(\S*?))([\}%\$<])\}-{2,3}>", re.M
 )
-FUNCTION = re.compile(
+FUNCTION_PATTERN = re.compile(
     r"(?:([A-Za-z_][A-Za-z0-9_.]*)|\$)(:{1,2})(?:[\s\S]*?)\s*(?:\((?:[\s\S]*?)\))",
     re.M,
 )
+INDENT_PATTERN = re.compile("^(for|if)")
+UNINDENT_PATTERN = re.compile("^(endfor|endif)|(elif|else)")
 BlockType: TypeAlias = Literal["control", "output", "flush", "function"]
 BlockMap: Mapping[tuple[str, str], BlockType] = MappingProxyType(
     {
@@ -55,45 +57,66 @@ def extract_blocks(
     return tuple(blocks), tuple(replacements)
 
 
-def create_script(blocks: Tuple[Block, ...]) -> str:
+def create_script(blocks: Tuple[Block, ...], function_name: str = "main") -> str:
     """Create a script from the blocks."""
     level = 1
     spacing = "  "
+    current_output_name = f"__current_output"
+    output_name = f"__output"
     script = [
-        "def main():",
-        f'{spacing*level}__format_spec = ""',
-        f"{spacing*level}__current_output = None",
-        f"{spacing*level}__output = []",
+        f"def {function_name}():",
+        f'{spacing*level}{current_output_name} = ""',
+        f"{spacing*level}{output_name} = []",
     ]
     for type, block, format_spec in blocks:
         _format_spec = '""' if format_spec is None else f'"{format_spec}"'
 
         if type == "function":
-            for function in tuple(FUNCTION.finditer(block))[::-1]:
+            for function in tuple(FUNCTION_PATTERN.finditer(block))[::-1]:
                 path, module_or_path = function.groups()
                 if len(module_or_path) == 2:
                     raise RuntimeError("Currently only module imports are supported.")
                 else:
                     script += [f"{level * spacing}import {path}"]
                 block = block[: function.start(2)] + "." + block[function.end(2) :]
-
-        if type in ("output", "control", "function"):
+        elif type == "control":
+            if INDENT_PATTERN.match(block):
+                script += [f"{level * spacing}{block}:"]
+                level += 1
+                continue
+            else:
+                try:
+                    _, evaluate = next(UNINDENT_PATTERN.finditer(block)).groups()
+                    level -= 1
+                    if evaluate:
+                        script += [f"{level * spacing}{block}:"]
+                        level += 1
+                    continue
+                except StopIteration:
+                    ...
+        if type == "output":
             script += [
-                f"{level * spacing}__format_spec = {_format_spec}",
-                f"{level * spacing}__current_output = {block}",
-                f"{level * spacing}__current_output = format(__current_output, __format_spec)",
+                f"{level * spacing}__{current_output_name} = {block}",
+                f"{level * spacing}{current_output_name} += format(__{current_output_name}, {_format_spec})",
+            ]
+        elif type in ("control", "function"):
+            script += [
+                f"{level * spacing}{block}",
             ]
         elif type == "flush":
-            script += [f"{level * spacing}__output.append(__current_output)"]
-    return "\n".join(script + [f"{spacing*1}return __output"])
+            script += [
+                f"{level * spacing}{output_name}.append({current_output_name})",
+                f"{level * spacing}{current_output_name} = ''",
+            ]
+    return "\n".join(script + [f"{spacing*1}return {output_name}"])
 
 
-def run_script(script: str) -> Tuple[str, ...]:
+def run_script(script: str, function_name: str = "main") -> Tuple[str, ...]:
     """Run the script and extract the results."""
     __globals = {}
     __locals = {}
     exec(script, __globals, __locals)  # nosec B102
-    return __locals["main"]()
+    return __locals[function_name]()
 
 
 def process(contents: str):
@@ -101,6 +124,7 @@ def process(contents: str):
     blocks, replacements = extract_blocks(contents)
     script = create_script(blocks)
     results = run_script(script)
+    print(script)
     output = contents
     for (start, end, append_flush), result in zip(replacements[::-1], results):
         if append_flush:
