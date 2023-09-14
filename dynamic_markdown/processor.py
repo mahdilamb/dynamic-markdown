@@ -70,7 +70,6 @@ def create_script(blocks: Tuple[Block, ...], function_name: str = "main") -> str
     ]
     for type, block, format_spec in blocks:
         _format_spec = '""' if format_spec is None else f'"{format_spec}"'
-
         if type == "function":
             for function in tuple(FUNCTION_PATTERN.finditer(block))[::-1]:
                 path, module_or_path = function.groups()
@@ -96,7 +95,7 @@ def create_script(blocks: Tuple[Block, ...], function_name: str = "main") -> str
                     ...
         if type == "output":
             script += [
-                f"{level * spacing}__{current_output_name} = {block}",
+                f"{level * spacing}__{current_output_name} = {block.encode('unicode_escape').decode()}",
                 f"{level * spacing}{current_output_name} += format(__{current_output_name}, {_format_spec})",
             ]
         elif type in ("control", "function"):
@@ -124,11 +123,9 @@ def process(contents: str):
     blocks, replacements = extract_blocks(contents)
     script = create_script(blocks)
     results = run_script(script)
-    print(script)
     output = contents
     for (start, end, append_flush), result in zip(replacements[::-1], results):
         if append_flush:
             result += "<!--{><}-->"
         output = output[:start] + result + output[end:]
-
     return output
