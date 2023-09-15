@@ -6,6 +6,8 @@ from typing import List, Literal, Mapping, Optional, Tuple, TypeAlias
 
 logger = logging.getLogger()
 
+
+Mode: TypeAlias = Literal["evaluate", "clean"]
 BLOCK_PATTERN = re.compile(
     r"<!-{2,3}\{([\{%\$>])\s*([\s\S]*?)(?:\s*|(?::\s*)(\S*?))([\}%\$<])\}-{2,3}>", re.M
 )
@@ -118,13 +120,16 @@ def run_script(script: str, function_name: str = "main") -> Tuple[str, ...]:
     return __locals[function_name]()
 
 
-def process(contents: str):
+def process(contents: str, mode: Mode = "evaluate"):
     """Process some Markdown content and update it by processing the blocks."""
     blocks, replacements = extract_blocks(contents)
-    script = create_script(blocks)
-    results = run_script(script)
+    if mode in ("evaluate",):
+        script = create_script(blocks)
+        results = run_script(script)
+    else:
+        results = [""] * len(replacements)
     output = contents
-    for (start, end, append_flush), result in zip(replacements[::-1], results):
+    for (start, end, append_flush), result in zip(replacements[::-1], results[::-1]):
         if append_flush:
             result += "<!--{><}-->"
         output = output[:start] + result + output[end:]
