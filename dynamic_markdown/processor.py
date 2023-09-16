@@ -31,13 +31,13 @@ Block: TypeAlias = Tuple[BlockType, str, Optional[str]]
 
 def extract_blocks(
     contents: str,
-) -> Tuple[Tuple[Block, ...], Tuple[Tuple[int, int, bool], ...]]:
+) -> Tuple[Tuple[Block, ...], Tuple[Tuple[int, int], ...]]:
     """Extract the blocks that need to be processed.
 
     Return them along with the positions from which replacements need to be inserted.
     """
     blocks: List[Block] = []
-    replacements: List[Tuple[int, int, bool]] = []
+    replacements: List[Tuple[int, int]] = []
     last_block = None
     append_flush = False
     for block in BLOCK_PATTERN.finditer(contents):
@@ -45,17 +45,17 @@ def extract_blocks(
         block_type = BlockMap[(lflag, rflag)]
         blocks.append((block_type, content, format_spec))
         if block_type == "flush":
-            replacements.append((last_block.end(0), block.start(0), False))
+            replacements.append((last_block.end(0), block.start(0)))
             append_flush = False
         else:
             if append_flush:
-                replacements.append((last_block.end(0), block.start(0), True))
+                replacements.append((last_block.end(0), block.start(0)))
                 append_flush = False
             if block_type == "output":
                 append_flush = True
         last_block = block
     if append_flush:
-        replacements.append((last_block.end(0), last_block.end(0), True))
+        replacements.append((last_block.end(0), last_block.end(0)))
     return tuple(blocks), tuple(replacements)
 
 
@@ -129,8 +129,6 @@ def process(contents: str, mode: Mode = "evaluate"):
     else:
         results = [""] * len(replacements)
     output = contents
-    for (start, end, append_flush), result in zip(replacements[::-1], results[::-1]):
-        if append_flush:
-            result += "<!--{><}-->"
+    for (start, end), result in zip(replacements[::-1], results[::-1]):
         output = output[:start] + result + output[end:]
     return output
