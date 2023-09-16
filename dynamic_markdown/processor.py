@@ -39,23 +39,13 @@ def extract_blocks(
     blocks: List[Block] = []
     replacements: List[Tuple[int, int]] = []
     last_block = None
-    append_flush = False
     for block in BLOCK_PATTERN.finditer(contents):
         lflag, content, format_spec, rflag = block.groups()
         block_type = BlockMap[(lflag, rflag)]
         blocks.append((block_type, content, format_spec))
         if block_type == "flush":
             replacements.append((last_block.end(0), block.start(0)))
-            append_flush = False
-        else:
-            if append_flush:
-                replacements.append((last_block.end(0), block.start(0)))
-                append_flush = False
-            if block_type == "output":
-                append_flush = True
         last_block = block
-    if append_flush:
-        replacements.append((last_block.end(0), last_block.end(0)))
     return tuple(blocks), tuple(replacements)
 
 
