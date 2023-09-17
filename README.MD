@@ -2,19 +2,23 @@
 
 [![Check code quality and run unit tests](https://github.com/mahdilamb/dynamic-markdown/actions/workflows/code-quality-and-tests.yaml/badge.svg)](https://github.com/mahdilamb/dynamic-markdown/actions/workflows/code-quality-and-tests.yaml)
 
-Python package for integrating python function results into a markdown document.
+Python package to enable executing python scripts from within a markdown file.
 
 ## Usage
 
-Function calling:
+### Installation
 
-```markdown
-# Function calling
-
-<!--{$ path.to.module:function(1, 2, k='v') $}-->
-<!--{><}-->
-
+```shell
+pip install git+https://github.com/mahdilamb/dynamic-markdown
 ```
+
+Most of the python code is executed as is and can be performed as such:
+
+```shell
+dynamic-markdown [--file=blah.MD]
+```
+
+If file is not supplied, the package will try and find a `Readme.md.in` or `Readme.md` file (case-insensitive).
 
 Getting and setting:
 
@@ -30,7 +34,7 @@ Getting and setting:
 
 Processed blocks must be one of the following:
 
-* Control calls `<!--{% ... %}-->`
-* Output calls `<!--{{ ... }}-->`
+* Control  `<!--{% ... %}-->`
+* Capture  `<!--{{ ... }}-->`
 * Flush `<!--{> ... <}-->`
-* Function calls `<!--{$ ... $}-->`
+* capture and Flush `<!--{{> ... <}}-->`

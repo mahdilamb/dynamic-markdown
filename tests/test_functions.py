@@ -13,42 +13,6 @@ def set_and_get_test():
     )
 
 
-@mock.patch("sys.modules", new={"fake": fake_adder})
-def use_global_test():
-    assert (
-        (
-            processor.process(
-                """
-<!---{% x = 5 %}-->
-<!---{$ y = fake:add(x, 5) $}--><!--{{y}}--><!--{><}-->
-"""
-            )
-        )
-        == """
-<!---{% x = 5 %}-->
-<!---{$ y = fake:add(x, 5) $}--><!--{{y}}-->10<!--{><}-->
-"""
-    )
-
-
-@mock.patch("sys.modules", new={"fake": fake_adder})
-def store_result_test():
-    assert (
-        (
-            processor.process(
-                """
-<!---{% x = 5 %}-->
-<!---{$ y = fake:add(x, 5) $}--><!--{{y}}--><!--{><}-->
-"""
-            )
-        )
-        == """
-<!---{% x = 5 %}-->
-<!---{$ y = fake:add(x, 5) $}--><!--{{y}}-->10<!--{><}-->
-"""
-    )
-
-
 def inline_assignment_test():
     """Test that inline assignment works from a primitive."""
     assert (
