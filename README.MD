@@ -6,16 +6,6 @@ Python package for integrating python function results into a markdown document.
 
 ## Usage
 
-Function calling:
-
-```markdown
-# Function calling
-
-<!--{$ path.to.module:function(1, 2, k='v') $}-->
-<!--{><}-->
-
-```
-
 Getting and setting:
 
 ```markdown
@@ -33,4 +23,3 @@ Processed blocks must be one of the following:
 * Control calls `<!--{% ... %}-->`
 * Output calls `<!--{{ ... }}-->`
 * Flush `<!--{> ... <}-->`
-* Function calls `<!--{$ ... $}-->`

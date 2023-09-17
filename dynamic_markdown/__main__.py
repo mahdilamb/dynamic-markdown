@@ -11,7 +11,7 @@ from dynamic_markdown import processor
 def main():
     """Run the updater."""
 
-    def create_parser():
+    def get_args():
         """Create the parser so this can be run from CLI."""
         parser = argparse.ArgumentParser("Generate markdown")
         readmes = glob.glob("[Rr][Ee][Aa][Dd][Mm][Ee].[Mm][Dd]*")
@@ -25,22 +25,41 @@ def main():
                 elif readme.lower().endswith(".md"):
                     default_out = readme
 
-        parser.add_argument("--in-file", default=default_in, nargs="?")
-        parser.add_argument("--out-file", default=default_out, nargs="?")
+        parser.add_argument("--file", default=default_in, nargs="?")
+        parser.add_argument("--output", nargs="?")
         parser.add_argument(
-            "--mode", default="evaluate", choices=processor.Mode.__args__
+            "mode", default="evaluate", choices=processor.Mode.__args__, nargs="?"
         )
-        return parser
+        parser.add_argument("--blocked-imports", nargs="+")
+        parser.add_argument("--additional-blocked-imports", nargs="+")
+        args = parser.parse_args()
+        if args.blocked_imports is None:
+            args.blocked_imports = processor.DEFAULT_BLOCKED_IMPORTS
+        else:
+            args.blocked_imports = tuple(imp for imp in args.blocked_imports if imp)
+        if args.additional_blocked_imports is not None:
+            args.blocked_imports = args.blocked_imports + tuple(
+                imp for imp in args.additional_blocked_imports if imp
+            )
+        delattr(args, "additional_blocked_imports")
 
-    parser = create_parser()
-    args = parser.parse_args()
-    if args.out_file is None:
-        args.out_file = args.in_file
+        if args.output is None:
+            if args.file is not default_in:
+                args.output = args.file
+            else:
+                args.output = default_out
+        return args
 
-    with open(args.in_file, "r") as fp:
-        content = processor.process(fp.read(), mode=args.mode)
+    args = get_args()
+    if args.output is None:
+        args.output = args.file
 
-    with open(args.out_file, "w") as fp:
+    with open(args.file, "r") as fp:
+        content = processor.process(
+            fp.read(), mode=args.mode, blocked_imports=args.blocked_imports
+        )
+
+    with open(args.output, "w") as fp:
         fp.writelines(content)
 
 
