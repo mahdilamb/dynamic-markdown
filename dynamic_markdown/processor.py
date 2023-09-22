@@ -16,7 +16,7 @@ DEFAULT_BLOCKED_IMPORTS = (
     "shutil.rmtree",
 )
 BLOCK_PATTERN = re.compile(
-    r"(?:[\s\n\r\t]*)<!-{2,3}\{(\{>|[\{%\$>])\s*([\s\S]*?)(?:\s*)(<\}|[\}%\$<])\}-{2,3}>(?:[\s\n\r\t]*)",
+    r"<!-{2,3}\{(\{>|[\{%\$>])\s*([\s\S]*?)(?:\s*)(<\}|[\}%\$<])\}-{2,3}>",
     re.M,
 )
 CAPTURE_BLOCK = re.compile(r"", re.M)
