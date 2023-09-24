@@ -19,6 +19,7 @@ BLOCK_PATTERN = re.compile(
     r"<!-{2,3}\{(\{>|[\{%\$>])\s*([\s\S]*?)(?:\s*)(<\}|[\}%\$<])\}-{2,3}>",
     re.M,
 )
+BLOCK_PATTERN_SPACED = re.compile(rf"(?:{BLOCK_PATTERN.pattern}(?:\s*\n+\s*)?)+", re.M)
 CAPTURE_BLOCK = re.compile(r"", re.M)
 INDENT_PATTERN = re.compile("^(for|if)")
 UNINDENT_PATTERN = re.compile("^(endfor|endif)|(elif|else)")
@@ -163,5 +164,5 @@ def process(
     for (start, end), result in zip(replacements[::-1], results[::-1]):
         output = output[:start] + result + output[end:]
     if mode == "finalize":
-        output = BLOCK_PATTERN.sub("", output)
+        output = BLOCK_PATTERN_SPACED.sub("", output)
     return output
