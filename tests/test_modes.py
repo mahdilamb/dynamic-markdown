@@ -7,7 +7,6 @@ def finalize_multiline_test():
     assert (
         processor.process(
             r"""Prefix
-
 <!--{{1}}-->
     <!--{{2}}-->
 <!--{{3}}-->
