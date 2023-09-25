@@ -22,7 +22,6 @@ BLOCK_PATTERN = re.compile(
 BLOCK_PATTERN_SPACED = re.compile(
     rf"({BLOCK_PATTERN.pattern}(\s*\n+\s*)?)+?$|{BLOCK_PATTERN.pattern}", re.M
 )
-print(BLOCK_PATTERN_SPACED.pattern)
 CAPTURE_BLOCK = re.compile(r"", re.M)
 INDENT_PATTERN = re.compile("^(for|if)")
 UNINDENT_PATTERN = re.compile("^(endfor|endif)|(elif|else)")
